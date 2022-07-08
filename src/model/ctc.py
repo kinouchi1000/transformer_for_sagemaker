@@ -35,17 +35,19 @@ class CTC(torch.nn.Module):
 
         if self.ctc_type == "builtin":
             self.ctc_loss = torch.nn.CTCLoss(reduction="none")
-        # elif self.ctc_type == "warpctc":
-        #     import warpctc_pytorch as warp_ctc
+        elif self.ctc_type == "warpctc":
+            raise NotImplementedError
+            # import warpctc_pytorch as warp_ctc
 
-        #     if ignore_nan_grad:
-        #         logging.warning("ignore_nan_grad option is not supported for warp_ctc")
-        #     self.ctc_loss = warp_ctc.CTCLoss(size_average=True, reduce=reduce)
+            # if ignore_nan_grad:
+            #     logging.warning("ignore_nan_grad option is not supported for warp_ctc")
+            # self.ctc_loss = warp_ctc.CTCLoss(size_average=True, reduce=reduce)
 
-        # elif self.ctc_type == "gtnctc":
-        #     from espnet.nets.pytorch_backend.gtn_ctc import GTNCTCLossFunction
+        elif self.ctc_type == "gtnctc":
+            raise NotImplementedError
+            # from espnet.nets.pytorch_backend.gtn_ctc import GTNCTCLossFunction
 
-        #     self.ctc_loss = GTNCTCLossFunction.apply
+            # self.ctc_loss = GTNCTCLossFunction.apply
         else:
             raise ValueError(
                 f'ctc_type must be "builtin" or "warpctc": {self.ctc_type}'
