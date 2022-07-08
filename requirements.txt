@@ -1,1 +1,8 @@
 editdistance
+apex
+fairscale
+torch-optimizer
+humanfriendly
+torch_complex
+typeguard
+librosa
