@@ -6,7 +6,7 @@ from typing import Tuple
 import torch
 
 
-class AbsModel(torch.nn.Module, ABC):
+class AbsAsrModel(torch.nn.Module, ABC):
     """The common abstract class among each tasks
 
     "ESPnetModel" is referred to a class which inherits torch.nn.Module,
@@ -37,6 +37,6 @@ class AbsModel(torch.nn.Module, ABC):
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
         raise NotImplementedError
 
-    @abstractmethod
-    def collect_feats(self, **batch: torch.Tensor) -> Dict[str, torch.Tensor]:
-        raise NotImplementedError
+    # @abstractmethod
+    # def collect_feats(self, **batch: torch.Tensor) -> Dict[str, torch.Tensor]:
+    #     raise NotImplementedError

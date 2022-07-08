@@ -12,6 +12,14 @@ from model.nets.transformer.layer_norm import LayerNorm
 from model.nets.transformer.positionwise_feed_forward import PositionwiseFeedForward
 from model.nets.transformer.repeat import repeat
 
+from model.nets.transformer.subsampling import check_short_utt
+from model.nets.transformer.subsampling import Conv2dSubsampling
+from model.nets.transformer.subsampling import Conv2dSubsampling2
+from model.nets.transformer.subsampling import Conv2dSubsampling6
+from model.nets.transformer.subsampling import Conv2dSubsampling8
+from model.nets.transformer.subsampling import TooShortUttError
+
+
 from model.ctc import CTC
 
 from model.encoder.abs_encoder import AbsEncoder
@@ -64,7 +72,7 @@ class TransformerEncoder(AbsEncoder):
     ) -> None:
         assert check_argument_types()
         super().__init__()
-        self._output_size
+        self._output_size = output_size
 
         if input_layer == "linear":
             self.embed = torch.nn.Sequential(
@@ -74,6 +82,14 @@ class TransformerEncoder(AbsEncoder):
                 torch.nn.ReLU(),
                 pos_enc_class(output_size, positional_dropout_rate),
             )
+        elif input_layer == "conv2d":
+            self.embed = Conv2dSubsampling(input_size, output_size, dropout_rate)
+        elif input_layer == "conv2d2":
+            self.embed = Conv2dSubsampling2(input_size, output_size, dropout_rate)
+        elif input_layer == "conv2d6":
+            self.embed = Conv2dSubsampling6(input_size, output_size, dropout_rate)
+        elif input_layer == "conv2d8":
+            self.embed = Conv2dSubsampling8(input_size, output_size, dropout_rate)
         elif input_layer == "embed":
             self.embed = torch.nn.Sequential(
                 torch.nn.Embedding(input_size, output_size, padding_idx=padding_idx),
@@ -140,6 +156,21 @@ class TransformerEncoder(AbsEncoder):
         """
         if self.embed is None:
             xs_pad = xs_pad
+        elif (
+            isinstance(self.embed, Conv2dSubsampling)
+            or isinstance(self.embed, Conv2dSubsampling2)
+            or isinstance(self.embed, Conv2dSubsampling6)
+            or isinstance(self.embed, Conv2dSubsampling8)
+        ):
+            short_status, limit_size = check_short_utt(self.embed, xs_pad.size(1))
+            if short_status:
+                raise TooShortUttError(
+                    f"has {xs_pad.size(1)} frames and is too short for subsampling "
+                    + f"(it needs more than {limit_size} frames), return empty results",
+                    xs_pad.size(1),
+                    limit_size,
+                )
+            xs_pad, masks = self.embed(xs_pad, masks)
         else:
             xs_pad = self.embed(xs_pad)
 

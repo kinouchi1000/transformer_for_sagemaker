@@ -15,7 +15,8 @@ from model.nets.e2e_asr_common import ErrorCalculator
 from model.nets.transformer.add_sos_eos import add_sos_eos
 from model.nets.nets_utils import th_accuracy
 
-from model.abs_asr_model import AbsModel
+from model.frontend.abs_frontend import AbsFrontend
+from model.abs_asr_model import AbsAsrModel
 from model.specaug.abs_specaug import AbsSpecAug
 from model.encoder.abs_encoder import AbsEncoder
 from model.decoder.abs_decoder import AbsDecoder
@@ -34,13 +35,14 @@ else:
         yield
 
 
-class ASRModel(AbsModel):
+class ASRModel(AbsAsrModel):
     """CTC-attention bybrid Encoder-Decoder model"""
 
     def __init__(
         self,
         vocab_size: int,
         token_list: Union[Tuple[str, ...], List[str]],
+        frontend: Optional[AbsFrontend],
         specaug: Optional[AbsSpecAug],
         normalize: Optional[AbsNormalize],
         preencoder: Optional[AbsPreEncoder],
@@ -76,6 +78,7 @@ class ASRModel(AbsModel):
         self.interctc_weight = interctc_weight
         self.token_list = token_list.copy()
 
+        self.frontend = frontend
         self.specaug = specaug
         self.normalize = normalize
         self.preencoder = preencoder
