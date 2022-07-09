@@ -1,0 +1,70 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "trainig_asr",
+            "type": "python",
+            "request": "launch",
+            "program": "train_asr.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "./src",
+            "args": [
+
+                "--ngpu",
+                "1",
+                "--num_workers",
+                "1",
+                "--seed",
+                "1234",
+                "--log_level",
+                "DEBUG",
+                "--logfile_path",
+                "test_utils/test_train.log",
+                // asr config
+                "--token_list",
+                "test_utils/tokens.txt",
+                "--token_type",
+                "char",
+                // "--bpemodel",
+                // "",
+                // layer 
+                "--frontend_conf",
+                "{}",
+                "--specaug_conf",
+                "{'freq_mask_width_range':[0,30],'time_mask_width_range':[0,40]}",
+                "--normalize_conf",
+                "{'stats_file':'test_utils/feats_stats.npz'}",
+                "--encoder_conf",
+                "{'input_size':80,'input_layer':'conv2d6','num_blocks':18,'output_size':512,'dropout_rate':0.1,'positional_dropout_rate':0.1,'attention_dropout_rate':0.1}",
+                "--decoder_conf",
+                "{'vocab_size':3262,'encoder_output_size':512,'self_attention_dropout_rate':0.1,'src_attention_dropout_rate':0.1}",
+                "--ctc_conf",
+                "{'odim':3262,'encoder_output_size':512}",
+                // optimizer
+                "--optim",
+                "adam",
+                "--optim_conf",
+                "{'lr':0.002}",
+                // scheduler
+                // "--scheduler",
+                // "warmuplr",
+                "--scheduler_conf",
+                "{'warmup_steps':25000}",
+
+                //trainer
+                "--max_epoch",
+                "10",
+                "--train_dtype",
+                "float32",
+            ]
+        }
+    ]
+}
+
+
+
+

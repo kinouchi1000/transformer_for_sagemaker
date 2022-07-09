@@ -6,3 +6,4 @@ humanfriendly
 torch_complex
 typeguard
 librosa
+yaml
