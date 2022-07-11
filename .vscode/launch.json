@@ -13,7 +13,12 @@
             "justMyCode": true,
             "cwd": "./src",
             "args": [
-
+                "--use_preprocessor",
+                "True",
+                "--token_type",
+                "char",
+                // "--only_show_model",
+                // "False",
                 "--ngpu",
                 "1",
                 "--num_workers",
@@ -26,7 +31,7 @@
                 "test_utils/test_train.log",
                 // asr config
                 "--token_list",
-                "test_utils/tokens.txt",
+                "test_utils/token_list/tokens.txt",
                 "--token_type",
                 "char",
                 // "--bpemodel",
@@ -37,7 +42,7 @@
                 "--specaug_conf",
                 "{'freq_mask_width_range':[0,30],'time_mask_width_range':[0,40]}",
                 "--normalize_conf",
-                "{'stats_file':'test_utils/feats_stats.npz'}",
+                "{'stats_file':'test_utils/asr_stats_raw_jp_char_new/train/feats_stats.npz'}",
                 "--encoder_conf",
                 "{'input_size':80,'input_layer':'conv2d6','num_blocks':18,'output_size':512,'dropout_rate':0.1,'positional_dropout_rate':0.1,'attention_dropout_rate':0.1}",
                 "--decoder_conf",
@@ -60,6 +65,26 @@
                 "10",
                 "--train_dtype",
                 "float32",
+                "--batch_size",
+                "3200",
+                "--train_dump_path",
+                "test_utils/dump/raw/train_nodup_sp/",
+                "--valid_dump_path",
+                "test_utils/dump/raw/train_dev/",
+
+                //batch sampler
+                "--train_shape_file",
+                "test_utils/asr_stats_raw_jp_char_new/train/speech_shape",
+                "--valid_shape_file",
+                "test_utils/asr_stats_raw_jp_char_new/valid/speech_shape",
+                "--batch_type",
+                "numel",
+                "--batch_bins",
+                "3750000",
+                "--accum_grad",
+                "24",
+                "--output_dir",
+                "test_utils"
             ]
         }
     ]

@@ -2,6 +2,7 @@ import humanfriendly
 import numpy as np
 import torch
 
+
 def pytorch_cudnn_version() -> str:
     message = (
         f"pytorch.version={torch.__version__}, "
@@ -15,7 +16,6 @@ def pytorch_cudnn_version() -> str:
             f"cudnn.deterministic={torch.backends.cudnn.deterministic}"
         )
     return message
-
 
 
 def get_human_readable_count(number: int) -> str:

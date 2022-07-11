@@ -126,6 +126,7 @@ class ASRModel(AbsAsrModel):
         speech_lengths: torch.Tensor,
         text: torch.Tensor,
         text_lengths: torch.Tensor,
+        **kwargs
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
         """Frontend + Encoder + Decoder + Calc loss
 
@@ -134,8 +135,9 @@ class ASRModel(AbsAsrModel):
             speech_lengths: (Batch, )
             text: (Batch, Length)
             text_lengths: (Batch,)
+            kwargs: "utt_id" is among the input.
         """
-        assert text_lengths.dim()
+        assert text_lengths.dim() == 1, text_lengths.shape
 
         # Check that batch_size is unified
         assert (
@@ -146,7 +148,7 @@ class ASRModel(AbsAsrModel):
         ), (speech.shape, speech_lengths.shape, text.shape, text_lengths.shape)
         batch_size = speech.shape[0]
 
-        # for data-parallel
+        # # for data-parallel
         text = text[:, : text_lengths.max()]
 
         # 1. Encoder

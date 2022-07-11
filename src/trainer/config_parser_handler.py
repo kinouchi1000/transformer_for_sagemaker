@@ -1,9 +1,20 @@
 import argparse
 import datetime
+import humanfriendly
 
 from typeguard import check_return_type
 from utils.nested_dict_action import NestedDictAction
 from trainer.classes import scheduler_classes, optim_classes
+from samplers.build_batch_sampler import BATCH_TYPES
+from utils.types import (
+    str2triple_str,
+    int_or_none,
+    strtobool,
+    str_or_none,
+    str_or_int,
+    str2pair_str,
+    str2bool,
+)
 
 
 class ConfigParserHandler:
@@ -103,6 +114,12 @@ class ConfigParserHandler:
             help="The model file of sentencepiece",
         )
         asr_group.add_argument(
+            "--use_preprocessor",
+            type=str2bool,
+            default=True,
+            help="Apply preprocessing to data or not",
+        )
+        asr_group.add_argument(
             "--model_conf",
             type=NestedDictAction,
             default=dict(),
@@ -177,6 +194,82 @@ class ConfigParserHandler:
             help="The keyword arguments for lr scheduler",
         )
 
+        # batch sampler related
+        batchsampler_group = parser.add_argument_group("BatchSampler related")
+        batchsampler_group.add_argument(
+            "--num_iters_per_epoch",
+            type=int_or_none,
+            default=None,
+            help="Restrict the number of iterations for training per epoch",
+        )
+        batchsampler_group.add_argument(
+            "--batch_size",
+            type=int,
+            default=20,
+            help="The mini-batch size used for training. Used if batch_type='unsorted',"
+            " 'sorted', or 'folded'.",
+        )
+        batchsampler_group.add_argument(
+            "--batch_bins",
+            type=int,
+            default=1000000,
+            help="The number of batch bins. Used if batch_type='length' or 'numel'",
+        )
+        batchsampler_group.add_argument(
+            "--valid_batch_bins",
+            type=int_or_none,
+            default=None,
+            help="If not given, the value of --batch_bins is used",
+        )
+
+        batchsampler_group.add_argument(
+            "--train_shape_file", type=str, action="append", default=[]
+        )
+        batchsampler_group.add_argument(
+            "--valid_shape_file", type=str, action="append", default=[]
+        )
+
+        group = parser.add_argument_group("Sequence iterator related")
+        _batch_type_help = ""
+        for key, value in BATCH_TYPES.items():
+            _batch_type_help += f'"{key}":\n{value}\n'
+        group.add_argument(
+            "--batch_type",
+            type=str,
+            default="folded",
+            choices=list(BATCH_TYPES),
+            help=_batch_type_help,
+        )
+        # group.add_argument(
+        #     "--valid_batch_type",
+        #     type=str_or_none,
+        #     default=None,
+        #     choices=list(BATCH_TYPES) + [None],
+        #     help="If not given, the value of --batch_type is used",
+        # )
+        group.add_argument("--fold_length", type=int, action="append", default=[])
+        group.add_argument(
+            "--sort_in_batch",
+            type=str,
+            default="descending",
+            choices=["descending", "ascending"],
+            help="Sort the samples in each mini-batches by the sample "
+            'lengths. To enable this, "shape_file" must have the length information.',
+        )
+        group.add_argument(
+            "--sort_batch",
+            type=str,
+            default="descending",
+            choices=["descending", "ascending"],
+            help="Sort mini-batches by the sample lengths",
+        )
+        group.add_argument(
+            "--multiple_iterator",
+            type=str2bool,
+            default=False,
+            help="Use multiple iterator mode",
+        )
+
         # trainer
         trainer_group = parser.add_argument_group("Trainer related")
         trainer_group.add_argument(
@@ -211,20 +304,20 @@ class ConfigParserHandler:
             'Give a pair referring the phase, "train" or "valid",'
             'the criterion name and the mode, "min" or "max", e.g. "acc,max".',
         )
-        # trainer_group.add_argument(
-        #     "--best_model_criterion",
-        #     type=str2triple_str,
-        #     nargs="+",
-        #     default=[
-        #         ("train", "loss", "min"),
-        #         ("valid", "loss", "min"),
-        #         ("train", "acc", "max"),
-        #         ("valid", "acc", "max"),
-        #     ],
-        #     help="The criterion used for judging of the best model. "
-        #     'Give a pair referring the phase, "train" or "valid",'
-        #     'the criterion name, and the mode, "min" or "max", e.g. "acc,max".',
-        # )
+        trainer_group.add_argument(
+            "--best_model_criterion",
+            type=str2triple_str,
+            nargs="+",
+            default=[
+                ("train", "loss", "min"),
+                ("valid", "loss", "min"),
+                ("train", "acc", "max"),
+                ("valid", "acc", "max"),
+            ],
+            help="The criterion used for judging of the best model. "
+            'Give a pair referring the phase, "train" or "valid",'
+            'the criterion name, and the mode, "min" or "max", e.g. "acc,max".',
+        )
         trainer_group.add_argument(
             "--keep_nbest_models",
             type=int,
@@ -282,6 +375,104 @@ class ConfigParserHandler:
             choices=["float16", "float32", "float64"],
             help="Data type for training.",
         )
+        trainer_group.add_argument(
+            "--use_amp",
+            type=str2bool,
+            default=False,
+            help="Enable Automatic Mixed Precision. This feature requires pytorch>=1.6",
+        )
+        trainer_group.add_argument(
+            "--log_interval",
+            type=int_or_none,
+            default=None,
+            help="Show the logs every the number iterations in each epochs at the "
+            "training phase. If None is given, it is decided according the number "
+            "of training samples automatically .",
+        )
+        trainer_group.add_argument(
+            "--use_matplotlib",
+            type=str2bool,
+            default=True,
+            help="Enable matplotlib logging",
+        )
+        trainer_group.add_argument(
+            "--use_tensorboard",
+            type=str2bool,
+            default=True,
+            help="Enable tensorboard logging",
+        )
+        trainer_group.add_argument(
+            "--use_wandb",
+            type=str2bool,
+            default=False,
+            help="Enable wandb logging",
+        )
+        trainer_group.add_argument(
+            "--wandb_project",
+            type=str,
+            default=None,
+            help="Specify wandb project",
+        )
+        trainer_group.add_argument(
+            "--wandb_id",
+            type=str,
+            default=None,
+            help="Specify wandb id",
+        )
+        trainer_group.add_argument(
+            "--wandb_entity",
+            type=str,
+            default=None,
+            help="Specify wandb entity",
+        )
+        trainer_group.add_argument(
+            "--wandb_name",
+            type=str,
+            default=None,
+            help="Specify wandb run name",
+        )
+        trainer_group.add_argument(
+            "--wandb_model_log_interval",
+            type=int,
+            default=-1,
+            help="Set the model log period",
+        )
+        trainer_group.add_argument(
+            "--detect_anomaly",
+            type=str2bool,
+            default=False,
+            help="Set torch.autograd.set_detect_anomaly",
+        )
 
+        dataset_group = parser.add_argument_group("Dataset related")
+        _data_path_and_name_and_type_help = (
+            "Give three words splitted by comma. It's used for the training data. "
+            "e.g. '--train_data_path_and_name_and_type some/path/a.scp,foo,sound'. "
+            "The first value, some/path/a.scp, indicates the file path, "
+            "and the second, foo, is the key name used for the mini-batch data, "
+            "and the last, sound, decides the file type. "
+            "This option is repeatable, so you can input any number of features "
+            "for your task. Supported file types are as follows:\n\n"
+        )
+        dataset_group.add_argument(
+            "--train_dump_path", type=str, default="dump/raw/train_nodup_sp/"
+        )
+        dataset_group.add_argument(
+            "--valid_dump_path", type=str, default="dump/raw/train_dev/"
+        )
+        dataset_group.add_argument(
+            "--max_cache_size",
+            type=humanfriendly.parse_size,
+            default=0.0,
+            help="The maximum cache size for data loader. e.g. 10MB, 20GB.",
+        )
+        dataset_group.add_argument(
+            "--max_cache_fd",
+            type=int,
+            default=32,
+            help="The maximum number of file descriptors to be kept "
+            "as opened for ark files. "
+            "This feature is only valid when data type is 'kaldi_ark'.",
+        )
         assert check_return_type(parser)
         return parser

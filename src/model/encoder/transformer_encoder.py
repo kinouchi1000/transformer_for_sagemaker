@@ -11,6 +11,7 @@ from model.nets.transformer.encoder_layer import EncoderLayer
 from model.nets.transformer.layer_norm import LayerNorm
 from model.nets.transformer.positionwise_feed_forward import PositionwiseFeedForward
 from model.nets.transformer.repeat import repeat
+from model.nets.nets_utils import make_pad_mask
 
 from model.nets.transformer.subsampling import check_short_utt
 from model.nets.transformer.subsampling import Conv2dSubsampling
@@ -154,6 +155,8 @@ class TransformerEncoder(AbsEncoder):
         Returns:
             position embedded tensor and mask
         """
+        masks = (~make_pad_mask(ilens)[:, None, :]).to(xs_pad.device)
+
         if self.embed is None:
             xs_pad = xs_pad
         elif (
@@ -201,4 +204,3 @@ class TransformerEncoder(AbsEncoder):
         if len(intermediate_outs) > 0:
             return (xs_pad, intermediate_outs), olens, None
         return xs_pad, olens, None
-
