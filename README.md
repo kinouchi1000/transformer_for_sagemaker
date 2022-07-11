@@ -10,6 +10,13 @@ requirements.txt にまとめてあるので、以下のコマンドでライブ
 pip install -r requirements.txt
 ```
 
-# quick start
+# How to run the training
 
-Work in progress....
+
+## データの準備
+
+`src/test_utils/`以下に dump, stats, token_list, などを置く
+
+## vscodeで学習の実行
+
+`.vscode/launch.json`で必要なパラメータを記述しているので必要に応じて実行してください。
